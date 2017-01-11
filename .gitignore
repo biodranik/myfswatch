@@ -1,0 +1,6 @@
+*.db
+*.opendb
+Release
+Debug
+x64
+.vs
