@@ -1,8 +1,16 @@
 #include <string>
 #include <Windows.h>
 
-void Usage(LPTSTR self) {
-  wprintf(L"Watches for any changes in directory and subdirectories.\nUsage: %s [-1|--one-event] <dir>\n", self);
+void Usage(const wchar_t * self) {
+  const wchar_t * text = LR"(Watches for any changes in directory and subdirectories.
+This is a very simple replacement for original fswatch utility
+(see https://github.com/emcrisostomo/fswatch for more details).
+Author: Alexander Zolotarev <me@alex.bio> from Minsk, Belarus.
+
+Usage: %s [-1 | --one-event] <dir to watch for changes>
+  -1, --one-event   Stop watching and exit after any detected change.
+)";
+  wprintf(text, self);
 }
 
 void OnFileSystemChanged(const std::wstring & dir) {
