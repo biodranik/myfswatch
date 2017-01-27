@@ -1,3 +1,5 @@
+// Author: Alexander Zolotarev <me@alex.bio> from Minsk, Belarus.
+
 #include <iostream>
 #include <string>
 #include <Windows.h>
@@ -68,8 +70,10 @@ void WatchDirectory(const wstring & dir) {
       FILE_NOTIFY_CHANGE_LAST_WRITE |
       FILE_NOTIFY_CHANGE_CREATION), &FindCloseChangeNotification);
   if (dwChangeHandle == INVALID_HANDLE_VALUE) {
-    wprintf(L"ERROR: FindFirstChangeNotification function failed.\n");
+    wcerr << L"ERROR: FindFirstChangeNotificationW has failed. Is directory " << dir << L" valid?" << endl;
     ExitProcess(GetLastError());
+  } else {
+    wcout << L"Watching " << dir << L" for changes." << endl;
   }
 
   // Change notification is set. Now wait on notification handle and act accordingly. 
@@ -79,7 +83,7 @@ void WatchDirectory(const wstring & dir) {
       // Modification is detected.
       OnFileSystemChanged(dir);
       if (FindNextChangeNotification(dwChangeHandle) == FALSE) {
-        wprintf(L"ERROR: FindNextChangeNotification function failed.\n");
+        wcerr << L"ERROR: FindNextChangeNotification has failed." << endl;
         ExitProcess(GetLastError());
       }
       break;
@@ -87,11 +91,11 @@ void WatchDirectory(const wstring & dir) {
     case WAIT_TIMEOUT:
       // A timeout occurred, this would happen if some value other 
       // than INFINITE is used in the Wait call and no changes occur.
-      wprintf(L"No changes in the timeout period.\n");
+      wcout << L"No changes in the timeout period." << endl;
       break;
 
     default:
-      wprintf(L"ERROR: Unhandled dwWaitStatus.\n");
+      wcerr << L"ERROR: Unhandled dwWaitStatus." << endl;
       ExitProcess(GetLastError());
       break;
     }
