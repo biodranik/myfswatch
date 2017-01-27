@@ -1,6 +1,9 @@
 #include <string>
 #include <Windows.h>
 
+using std::wstring;
+// The simplest solution to store program options.
+bool g_exitOnFirstChange = false;
 void Usage(const wchar_t * self) {
   const wchar_t * text = LR"(Watches for any changes in directory and subdirectories.
 This is a very simple replacement for original fswatch utility
@@ -17,7 +20,7 @@ void OnFileSystemChanged(const std::wstring & dir) {
   wprintf(L"Content of (%s) directory has changed.\n", dir.c_str());
 }
 
-void WatchDirectory(const std::wstring & dir, bool exitOnFirstChange) {
+void WatchDirectory(const wstring & dir) {
   wchar_t drive[4];
   wchar_t file[_MAX_FNAME];
   wchar_t ext[_MAX_EXT];
@@ -63,7 +66,7 @@ void WatchDirectory(const std::wstring & dir, bool exitOnFirstChange) {
       break;
     }
     // Exit infinite loop after the first change.
-    if (exitOnFirstChange) {
+    if (g_exitOnFirstChange) {
       break;
     }
   }
@@ -75,12 +78,11 @@ int wmain(int argc, wchar_t * argv[]) {
     return 1;
   }
 
-  bool exitOnFirstChange = false;
-  std::wstring dir;
+  wstring dir;
   for (int i = 1; i < argc; ++i) {
-    const std::wstring param(argv[i]);
+    const wstring param(argv[i]);
     if (param == L"-1" || param == L"--one-event") {
-      exitOnFirstChange = true;
+      g_exitOnFirstChange = true;
     }
     else if (param[0] == L'-') {
       // Ignore all other params.
@@ -92,7 +94,7 @@ int wmain(int argc, wchar_t * argv[]) {
     Usage(argv[0]);
     return 1;
   }
-  WatchDirectory(dir, exitOnFirstChange);
+  WatchDirectory(dir);
   // Correct exit in case of --one-event.
   return 0;
 }
