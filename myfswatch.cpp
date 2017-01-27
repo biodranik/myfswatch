@@ -69,6 +69,8 @@ void WatchDirectory(const wstring & dir) {
     if (g_exitOnFirstChange) {
       break;
     }
+    // Helps to display output on some buffered terminals like MSYS.
+    wcout.flush();
   }
 }
 
