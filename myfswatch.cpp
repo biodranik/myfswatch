@@ -1,23 +1,34 @@
 #include <string>
 #include <Windows.h>
 
+using std::wcout;
+using std::endl;
 using std::wstring;
 // The simplest solution to store program options.
 bool g_exitOnFirstChange = false;
+bool g_useNulAsDelimiter = false;
+
 void Usage(const wchar_t * self) {
   const wchar_t * text = LR"(Watches for any changes in directory and subdirectories.
 This is a very simple replacement for original fswatch utility
 (see https://github.com/emcrisostomo/fswatch for more details).
 Author: Alexander Zolotarev <me@alex.bio> from Minsk, Belarus.
 
-Usage: %s [-1 | --one-event] <dir to watch for changes>
-  -1, --one-event   Stop watching and exit after any detected change.
+Usage: %s [-1|--one-event] <dir to watch for changes>
+  -0, --print0      Use 'NUL' ('\0') to split output instead of default newline ('\n').
+  -1, --one-event   Stop watching and exit after any detected change instead of watching indefinitely.
 )";
   wprintf(text, self);
 }
 
-void OnFileSystemChanged(const std::wstring & dir) {
-  wprintf(L"Content of (%s) directory has changed.\n", dir.c_str());
+void OnFileSystemChanged(const wstring & dir) {
+  wcout << L"Content of (" << dir << L") directory has changed.";
+  if (g_useNulAsDelimiter) {
+    wcout.put(0);
+  }
+  else {
+    wcout << endl;
+  }
 }
 
 void WatchDirectory(const wstring & dir) {
@@ -85,10 +96,12 @@ int wmain(int argc, wchar_t * argv[]) {
     const wstring param(argv[i]);
     if (param == L"-1" || param == L"--one-event") {
       g_exitOnFirstChange = true;
-    }
-    else if (param[0] == L'-') {
+    } else if (param == L"-0" || param == L"--print0") {
+      g_useNulAsDelimiter = true;
+    } else if (param[0] == L'-') {
       // Ignore all other params.
     } else {
+      // Any non-param becomes a directory to watch.
       dir = param;
     }
   }
