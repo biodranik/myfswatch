@@ -1,9 +1,28 @@
+#include <iostream>
 #include <string>
 #include <Windows.h>
 
+using std::wcerr;
 using std::wcout;
 using std::endl;
 using std::wstring;
+
+// Helper to clean up handle on exit.
+template <class TCloseFunction> class HandleCloser {
+  HANDLE m_handle;
+  TCloseFunction m_close;
+public:
+  HandleCloser(HANDLE handle, TCloseFunction closer)
+  : m_handle(handle), m_close(closer) {}
+  ~HandleCloser() { m_close(m_handle); }
+  operator HANDLE() const { return m_handle; }
+};
+
+template <class TCloseFunction>
+HandleCloser<TCloseFunction> AutoCloseHandle(HANDLE handle, TCloseFunction closer) {
+  return HandleCloser<TCloseFunction>(handle, closer);
+}
+
 // The simplest solution to store program options.
 bool g_exitOnFirstChange = false;
 bool g_useNulAsDelimiter = false;
@@ -32,22 +51,22 @@ void OnFileSystemChanged(const wstring & dir) {
 }
 
 void WatchDirectory(const wstring & dir) {
-  wchar_t drive[4];
-  wchar_t file[_MAX_FNAME];
-  wchar_t ext[_MAX_EXT];
-  _wsplitpath_s(dir.c_str(), drive, 4, NULL, 0, file, _MAX_FNAME, ext, _MAX_EXT);
-  drive[2] = L'\\';
-  drive[3] = L'\0';
+  // Convert relative paths to fully qualified.
+  wchar_t fullPath[MAX_PATH];
+  if (0 == GetFullPathNameW(dir.c_str(), MAX_PATH, fullPath, NULL)) {
+    wcerr << L"ERROR: GetFullPathNameW has failed. Is directory " << dir << L" valid?" << endl;
+    ExitProcess(GetLastError());
+  }
 
   // Watch the directory and it's subdirectories for any modifications. 
-  HANDLE dwChangeHandle = FindFirstChangeNotificationW(
-      dir.c_str(),                    // directory to watch 
+  const auto dwChangeHandle = AutoCloseHandle(FindFirstChangeNotificationW(
+      fullPath,                       // directory to watch
       TRUE,                           // watch subtree 
       FILE_NOTIFY_CHANGE_FILE_NAME |
       FILE_NOTIFY_CHANGE_DIR_NAME |
       FILE_NOTIFY_CHANGE_SIZE |
       FILE_NOTIFY_CHANGE_LAST_WRITE |
-      FILE_NOTIFY_CHANGE_CREATION);
+      FILE_NOTIFY_CHANGE_CREATION), &FindCloseChangeNotification);
   if (dwChangeHandle == INVALID_HANDLE_VALUE) {
     wprintf(L"ERROR: FindFirstChangeNotification function failed.\n");
     ExitProcess(GetLastError());
